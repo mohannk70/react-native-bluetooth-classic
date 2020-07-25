@@ -28,6 +28,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.annotation.Nullable;
@@ -639,7 +640,7 @@ public class RNBluetoothClassicModule
    */
   @ReactMethod
   public void writeToDevice(String message, Promise promise) {
-    if (D) Log.d(TAG, "Write " + message);
+    if (D) Log.d(TAG, "Write " + Base64.decode(message, Base64.DEFAULT));
     byte[] data = Base64.decode(message, Base64.DEFAULT);
     mBluetoothService.write(data);
     promise.resolve(true);
@@ -825,19 +826,22 @@ public class RNBluetoothClassicModule
     String msg = String.format("Received %d bytes from device %s", data.length, device.getName());
     Log.d(TAG, msg);
 
-    mBuffer.append(new String(data, mCharset));
+    Log.d(TAG, Arrays.toString(data));
+
+    // mBuffer.append(new String(data, mCharset));
 
     if (!mReadObserving.get()) {
       Log.d(TAG, "No BTEvent.READ listeners are registered, skipping handling of the event");
       return;
     }
 
-    String message;
-    while ((message = readUntil(this.mDelimiter)) != null) {
-      BluetoothMessage bluetoothMessage
-              = new BluetoothMessage<>(new NativeDevice(mBluetoothService.connectedDevice()).map(), message);
-      sendEvent(BluetoothEvent.READ.code, bluetoothMessage.asMap());
-    }
+    String message = new String(data, mCharset);
+    // while ((message = readUntil(this.mDelimiter)) != null) {
+    BluetoothMessage bluetoothMessage
+      = new BluetoothMessage<>(new NativeDevice(mBluetoothService.connectedDevice()).map(), message);
+    sendEvent(BluetoothEvent.READ.code, bluetoothMessage.asMap());
+
+   // }
   }
 
   /**
